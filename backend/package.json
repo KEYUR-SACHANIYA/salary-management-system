@@ -6,7 +6,8 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "db:seed": "node --env-file=.env --import tsx src/db/seed/seed.ts"
   },
   "jest": {
     "preset": "ts-jest",

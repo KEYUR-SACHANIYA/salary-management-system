@@ -1,5 +1,9 @@
 import { Pool } from "pg";
 import { createApp } from "./app";
+import { PostgresCompensationRepository } from "./modules/compensations/compensation.postgres-repository";
+import { CompensationService } from "./modules/compensations/compensation.service";
+import { CompensationController } from "./modules/compensations/compensation.controller";
+import { createCompensationRouter } from "./modules/compensations/compensation.routes";
 import { PostgresEmployeeRepository } from "./modules/employees/employee.postgres-repository";
 import { EmployeeService } from "./modules/employees/employee.service";
 import { EmployeeController } from "./modules/employees/employee.controller";
@@ -14,10 +18,16 @@ if (!databaseUrl) {
 }
 
 const pool = new Pool({ connectionString: databaseUrl });
+
 const employeeRepository = new PostgresEmployeeRepository(pool);
 const employeeService = new EmployeeService(employeeRepository);
 const employeeController = new EmployeeController(employeeService);
 
+const compensationRepository = new PostgresCompensationRepository(pool);
+const compensationService = new CompensationService(compensationRepository);
+const compensationController = new CompensationController(compensationService);
+
 createApp({
   employeeRouter: createEmployeeRouter(employeeController),
+  compensationRouter: createCompensationRouter(compensationController),
 }).listen(port);

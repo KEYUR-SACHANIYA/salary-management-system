@@ -1,6 +1,7 @@
-import express, { type Express } from "express";
+import express, { type Express, type Router } from "express";
+import { errorHandler } from "./shared/error-handler";
 
-export function createApp(): Express {
+export function createApp(options?: { employeeRouter?: Router }): Express {
   const app = express();
   app.use(express.json());
 
@@ -8,5 +9,10 @@ export function createApp(): Express {
     res.json({ status: "ok" });
   });
 
+  if (options?.employeeRouter) {
+    app.use("/api/v1/employees", options.employeeRouter);
+  }
+
+  app.use(errorHandler);
   return app;
 }

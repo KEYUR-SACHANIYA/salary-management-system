@@ -17,7 +17,7 @@ ACME’s HR manager tracks pay for 10,000 employees in several countries, all in
 
 - We store the contract amount. Yearly and converted figures are calculated when shown.
 - Everyone is full-time. Yearly pay equals the annual amount, monthly × 12, weekly × 52, or hourly × 40 × 52.
-- The dashboard shows one reporting currency, USD by default. Rates are fixed as of 2026-01-01 and shown on the page. The employee list still shows the original amount and currency.
+- The dashboard shows one reporting currency, USD by default. Rates are fixed as of 2026-09-23 and shown on the page. The employee list still shows the original amount and currency.
 - The dashboard also shows yearly totals in each original currency.
 - Salary sort uses the yearly amount in the selected currency.
 - A future start date stays off current pay and the dashboard until that day.

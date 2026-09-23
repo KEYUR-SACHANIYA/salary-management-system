@@ -1,5 +1,9 @@
 import { Pool } from "pg";
 import { createApp } from "./app";
+import { PostgresAnalyticsRepository } from "./modules/analytics/analytics.postgres-repository";
+import { AnalyticsService } from "./modules/analytics/analytics.service";
+import { AnalyticsController } from "./modules/analytics/analytics.controller";
+import { createAnalyticsRouter } from "./modules/analytics/analytics.routes";
 import { PostgresCompensationRepository } from "./modules/compensations/compensation.postgres-repository";
 import { CompensationService } from "./modules/compensations/compensation.service";
 import { CompensationController } from "./modules/compensations/compensation.controller";
@@ -27,7 +31,12 @@ const compensationRepository = new PostgresCompensationRepository(pool);
 const compensationService = new CompensationService(compensationRepository);
 const compensationController = new CompensationController(compensationService);
 
+const analyticsRepository = new PostgresAnalyticsRepository(pool);
+const analyticsService = new AnalyticsService(analyticsRepository);
+const analyticsController = new AnalyticsController(analyticsService);
+
 createApp({
   employeeRouter: createEmployeeRouter(employeeController),
   compensationRouter: createCompensationRouter(compensationController),
+  analyticsRouter: createAnalyticsRouter(analyticsController),
 }).listen(port);

@@ -95,6 +95,25 @@ describe("employee directory query", () => {
     expect(directoryHref(next)).toBe("/employees?search=maya&page=3");
   });
 
+  it("builds the default directory URL when no filters are active", () => {
+    const defaults = {
+      page: 1,
+      pageSize: 20,
+      search: undefined,
+      country: undefined,
+      department: undefined,
+      currency: undefined,
+      payFrequency: undefined,
+      sortBy: "name",
+      sortOrder: "asc",
+      reportingCurrency: "USD",
+    };
+
+    expect(directoryHref(defaults)).toBe("/employees");
+    expect(defaults.sortBy).toBe("name");
+    expect(defaults.sortOrder).toBe("asc");
+  });
+
   it("ignores unknown country values instead of sending them to the API", () => {
     expect(parseDirectorySearchParams({ country: "Mars" }).country).toBeUndefined();
   });

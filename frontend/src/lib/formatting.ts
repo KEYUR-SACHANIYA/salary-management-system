@@ -1,5 +1,14 @@
 import type { ChangeReason, CompensationStatus, PayFrequency } from "./constants";
 
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$",
+  INR: "₹",
+  GBP: "£",
+  EUR: "€",
+  CAD: "C$",
+  SGD: "S$",
+};
+
 export function formatMoney(amount: string, currency: string): string {
   const trimmed = amount.trim();
   const negative = trimmed.startsWith("-");
@@ -10,6 +19,87 @@ export function formatMoney(amount: string, currency: string): string {
   const cents = (fractionRaw.replace(/\D/g, "") + "00").slice(0, 2);
 
   return `${currency} ${negative ? "-" : ""}${groupedWhole}.${cents}`;
+}
+
+export function formatCurrencyAmount(amount: string, currency: string): string {
+  const trimmed = amount.trim();
+  const numeric = Number(trimmed);
+
+  if (!Number.isFinite(numeric)) {
+    return `${currency} 0.00`;
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numeric);
+}
+
+export function calculateAnnualizedAmount(
+  amount: string,
+  payFrequency: PayFrequency,
+): number {
+  const numeric = Number(amount);
+
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return 0;
+  }
+
+  switch (payFrequency) {
+    case "ANNUALLY":
+      return numeric;
+    case "MONTHLY":
+      return numeric * 12;
+    case "WEEKLY":
+      return numeric * 52;
+    case "HOURLY":
+      return numeric * 40 * 52;
+    default:
+      return numeric;
+  }
+}
+
+export function formatAnnualizedCompensation(
+  amount: string,
+  currency: string,
+  payFrequency: PayFrequency,
+): string {
+  const annualized = calculateAnnualizedAmount(amount, payFrequency);
+
+  if (annualized <= 0) {
+    return "—";
+  }
+
+  return `${formatCurrencyAmount(annualized.toFixed(2), currency)} / year`;
+}
+
+export function formatCompactCurrency(amount: string, currency: string): string {
+  const trimmed = amount.trim();
+  const numeric = Number(trimmed);
+
+  if (!Number.isFinite(numeric)) {
+    return formatMoney(amount, currency);
+  }
+
+  const sign = numeric < 0 ? "-" : "";
+  const absolute = Math.abs(numeric);
+  const symbol = CURRENCY_SYMBOLS[currency] ?? currency;
+
+  if (absolute >= 1_000_000_000) {
+    return `${sign}${symbol}${(absolute / 1_000_000_000).toFixed(2).replace(/\.00$/, "")}B`;
+  }
+
+  if (absolute >= 1_000_000) {
+    return `${sign}${symbol}${(absolute / 1_000_000).toFixed(2).replace(/\.00$/, "")}M`;
+  }
+
+  if (absolute >= 1_000) {
+    return `${sign}${symbol}${(absolute / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
+  }
+
+  return formatMoney(amount, currency);
 }
 
 export function formatCount(value: number): string {

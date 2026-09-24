@@ -20,12 +20,22 @@ function databaseUrl(): string {
   return value;
 }
 
+function createPoolConfig(connectionString: string) {
+  const hostname = new URL(connectionString).hostname;
+  const usesRemoteDatabase = !["localhost", "127.0.0.1", "::1"].includes(hostname);
+
+  return {
+    connectionString,
+    ...(usesRemoteDatabase ? { ssl: { rejectUnauthorized: false } } : {}),
+  };
+}
+
 const RUN_PREFIX = `TESTCOMP${Date.now().toString(36).slice(-8)}`;
 
 describe("PostgresCompensationRepository", () => {
   jest.setTimeout(30_000);
 
-  const pool = new Pool({ connectionString: databaseUrl() });
+  const pool = new Pool(createPoolConfig(databaseUrl()));
   const repository = new PostgresCompensationRepository(pool);
 
   afterAll(async () => {

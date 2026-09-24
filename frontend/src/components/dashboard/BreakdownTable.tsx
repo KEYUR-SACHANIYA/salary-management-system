@@ -44,34 +44,34 @@ export function BreakdownTable({
     fill: CURRENCY_COLORS[row.currency] ?? "#94A3B8",
   }));
 
-  const chartTooltip = ({
-    active,
-    payload,
-  }: {
-    active?: boolean;
-    payload?: ReadonlyArray<{
-      payload: {
-        name: string;
-        value: number;
-        currency: string;
-        totalAnnualCompensation: string;
-      };
-    }>;
-  }) => {
+  const chartTooltip = (props: any) => {
+    const { active, payload } = props;
+
     if (!active || !payload || payload.length === 0) {
       return null;
     }
 
-    const segment = payload[0].payload;
+    const segment = payload[0]?.payload as {
+      name?: string;
+      value?: number;
+      currency?: string;
+      totalAnnualCompensation?: string;
+    } | null;
+
+    if (!segment || segment.value === undefined || segment.currency === undefined) {
+      return null;
+    }
+
+    const totalCompensation = segment.totalAnnualCompensation ?? "0";
     const percentage = totalEmployees === 0 ? 0 : (segment.value / totalEmployees) * 100;
 
     return (
       <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-lg">
         <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-          {segment.name}
+          {segment.name ?? "Employee group"}
         </div>
         <div className="mt-2 text-sm font-medium text-slate-900">
-          {formatMoney(segment.totalAnnualCompensation, segment.currency)}
+          {formatMoney(totalCompensation, segment.currency)}
         </div>
         <div className="mt-1 text-xs text-slate-600">
           {formatCount(segment.value)} employees · {percentage.toFixed(1)}%

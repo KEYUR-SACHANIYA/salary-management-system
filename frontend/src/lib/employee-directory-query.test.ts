@@ -1,3 +1,4 @@
+import type { EmployeeListParams } from "@/types/employees";
 import { formatIsoDate, formatMoney, formatPayFrequency } from "./formatting";
 import {
   applyDirectoryUpdates,
@@ -96,7 +97,7 @@ describe("employee directory query", () => {
   });
 
   it("builds the default directory URL when no filters are active", () => {
-    const defaults = {
+    const defaults: EmployeeListParams = {
       page: 1,
       pageSize: 20,
       search: undefined,

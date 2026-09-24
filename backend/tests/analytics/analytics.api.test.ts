@@ -1,11 +1,11 @@
 import request from "supertest";
-import { createApp } from "../src/app";
-import { AnalyticsController } from "../src/modules/analytics/analytics.controller";
-import { createAnalyticsRouter } from "../src/modules/analytics/analytics.routes";
-import { AnalyticsService } from "../src/modules/analytics/analytics.service";
-import type { AnalyticsRepository } from "../src/modules/analytics/analytics.repository";
-import type { SalaryAnalytics } from "../src/modules/analytics/analytics.types";
-import { CURRENCIES, type Currency } from "../src/shared/pay-rules";
+import { createApp } from "../../src/app";
+import { AnalyticsController } from "../../src/modules/analytics/analytics.controller";
+import { createAnalyticsRouter } from "../../src/modules/analytics/analytics.routes";
+import { AnalyticsService } from "../../src/modules/analytics/analytics.service";
+import type { AnalyticsRepository } from "../../src/modules/analytics/analytics.repository";
+import type { SalaryAnalytics } from "../../src/modules/analytics/analytics.types";
+import { CURRENCIES, type Currency } from "../../src/shared/pay-rules";
 
 const fixture: SalaryAnalytics = {
   reportingCurrency: "USD",
@@ -92,7 +92,7 @@ describe("Analytics HTTP API", () => {
 
   it("maps unexpected errors to INTERNAL_SERVER_ERROR without internal details", async () => {
     const repository = new FakeAnalyticsRepository();
-    repository.error = new Error("password=super-secret connection lost");
+    repository.error = new Error("database connection lost")
     const response = await request(appWith(repository)).get("/api/v1/analytics/salary");
 
     expect(response.status).toBe(500);

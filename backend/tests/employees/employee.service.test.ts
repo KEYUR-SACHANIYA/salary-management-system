@@ -1,7 +1,7 @@
-import { EmployeeNotFoundError } from "../src/shared/errors";
-import type { EmployeeRepository } from "../src/modules/employees/employee.repository";
-import { EmployeeService } from "../src/modules/employees/employee.service";
-import type { Employee, EmployeeListQuery, EmployeeListResult } from "../src/modules/employees/employee.types";
+import { EmployeeNotFoundError } from "../../src/shared/errors";
+import type { EmployeeRepository } from "../../src/modules/employees/employee.repository";
+import { EmployeeService } from "../../src/modules/employees/employee.service";
+import type { Employee, EmployeeListQuery, EmployeeListResult } from "../../src/modules/employees/employee.types";
 
 const employee: Employee = {
   id: "11111111-1111-4111-8111-111111111111",

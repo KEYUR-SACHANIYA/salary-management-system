@@ -1,10 +1,10 @@
 import request from "supertest";
-import { createApp } from "../src/app";
-import { EmployeeController } from "../src/modules/employees/employee.controller";
-import { createEmployeeRouter } from "../src/modules/employees/employee.routes";
-import { EmployeeService } from "../src/modules/employees/employee.service";
-import type { EmployeeRepository } from "../src/modules/employees/employee.repository";
-import type { Employee, EmployeeListQuery, EmployeeListResult } from "../src/modules/employees/employee.types";
+import { createApp } from "../../src/app";
+import { EmployeeController } from "../../src/modules/employees/employee.controller";
+import { createEmployeeRouter } from "../../src/modules/employees/employee.routes";
+import { EmployeeService } from "../../src/modules/employees/employee.service";
+import type { EmployeeRepository } from "../../src/modules/employees/employee.repository";
+import type { Employee, EmployeeListQuery, EmployeeListResult } from "../../src/modules/employees/employee.types";
 
 const employee: Employee = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -147,7 +147,7 @@ describe("Employee HTTP API", () => {
 
   it("maps unexpected errors to INTERNAL_SERVER_ERROR without internal details", async () => {
     const repository = new FakeEmployeeRepository();
-    repository.listError = new Error("password=super-secret connection lost");
+    repository.listError = new Error("database connection lost")
     const response = await request(appWith(repository)).get("/api/v1/employees");
 
     expect(response.status).toBe(500);

@@ -1,7 +1,7 @@
-import { EmployeeNotFoundError, ValidationError } from "../src/shared/errors";
-import type { CompensationRepository } from "../src/modules/compensations/compensation.repository";
-import { CompensationService } from "../src/modules/compensations/compensation.service";
-import type { Compensation, CreateCompensationInput } from "../src/modules/compensations/compensation.types";
+import { EmployeeNotFoundError, ValidationError } from "../../src/shared/errors";
+import type { CompensationRepository } from "../../src/modules/compensations/compensation.repository";
+import { CompensationService } from "../../src/modules/compensations/compensation.service";
+import type { Compensation, CreateCompensationInput } from "../../src/modules/compensations/compensation.types";
 
 const EMPLOYEE_ID = "11111111-1111-4111-8111-111111111111";
 const TODAY = "2026-09-24";
@@ -44,7 +44,7 @@ class FakeCompensationRepository implements CompensationRepository {
   addError: Error | undefined;
   addCalls: Array<{ employeeId: string; input: CreateCompensationInput }> = [];
 
-  async getHistory(_employeeId: string): Promise<Compensation[]> {
+  async getHistory(): Promise<Compensation[]> {
     if (this.getHistoryError) throw this.getHistoryError;
     return this.history;
   }

@@ -2,7 +2,7 @@
   "name": "salary-management-api",
   "private": true,
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "node --env-file=.env --import tsx --watch src/main.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
     "test": "jest",

@@ -39,4 +39,7 @@ createApp({
   employeeRouter: createEmployeeRouter(employeeController),
   compensationRouter: createCompensationRouter(compensationController),
   analyticsRouter: createAnalyticsRouter(analyticsController),
-}).listen(port);
+}).listen(port, () => {
+  console.log(`API server running on http://localhost:${port}`);
+  console.log(`Health check: http://localhost:${port}/health`);
+});

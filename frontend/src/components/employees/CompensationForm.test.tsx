@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ApiError } from "@/lib/api-client";
 import { CompensationForm } from "./CompensationForm";
@@ -27,7 +27,7 @@ describe("CompensationForm", () => {
 
     await user.click(screen.getByRole("button", { name: "Save compensation" }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent(/amount greater than zero/i);
+    expect(screen.getByRole("alert")).toHaveTextContent(/amount must be greater than 0|amount greater than zero/i);
     expect(createEmployeeCompensation).not.toHaveBeenCalled();
   });
 
@@ -42,7 +42,10 @@ describe("CompensationForm", () => {
     await user.type(screen.getByLabelText("Amount"), "125000.00");
     await user.selectOptions(screen.getByLabelText("Currency"), "EUR");
     await user.selectOptions(screen.getByLabelText("Pay frequency"), "Monthly");
-    await user.type(screen.getByLabelText("Effective from"), "2026-10-01");
+    await user.click(screen.getByRole("button", { name: "Schedule for a future date" }));
+    fireEvent.change(screen.getByLabelText("Effective from"), {
+      target: { value: "2026-10-01" },
+    });
     await user.selectOptions(screen.getByLabelText("Change reason"), "Promotion");
     await user.click(screen.getByRole("button", { name: "Save compensation" }));
 
@@ -57,7 +60,7 @@ describe("CompensationForm", () => {
       },
     );
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Compensation change saved.",
+      "Salary change scheduled.",
     );
     expect(refresh).toHaveBeenCalled();
     expect(screen.getByLabelText("Amount")).toHaveValue("");

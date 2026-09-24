@@ -21,6 +21,60 @@ export function formatMoney(amount: string, currency: string): string {
   return `${currency} ${negative ? "-" : ""}${groupedWhole}.${cents}`;
 }
 
+export function formatCurrencyAmount(amount: string, currency: string): string {
+  const trimmed = amount.trim();
+  const numeric = Number(trimmed);
+
+  if (!Number.isFinite(numeric)) {
+    return `${currency} 0.00`;
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numeric);
+}
+
+export function calculateAnnualizedAmount(
+  amount: string,
+  payFrequency: PayFrequency,
+): number {
+  const numeric = Number(amount);
+
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return 0;
+  }
+
+  switch (payFrequency) {
+    case "ANNUALLY":
+      return numeric;
+    case "MONTHLY":
+      return numeric * 12;
+    case "WEEKLY":
+      return numeric * 52;
+    case "HOURLY":
+      return numeric * 40 * 52;
+    default:
+      return numeric;
+  }
+}
+
+export function formatAnnualizedCompensation(
+  amount: string,
+  currency: string,
+  payFrequency: PayFrequency,
+): string {
+  const annualized = calculateAnnualizedAmount(amount, payFrequency);
+
+  if (annualized <= 0) {
+    return "—";
+  }
+
+  return `${formatCurrencyAmount(annualized.toFixed(2), currency)} / year`;
+}
+
 export function formatCompactCurrency(amount: string, currency: string): string {
   const trimmed = amount.trim();
   const numeric = Number(trimmed);

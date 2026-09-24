@@ -142,8 +142,8 @@ export function applyDirectoryUpdates(
     department?: string;
     currency?: Currency | "";
     payFrequency?: PayFrequency | "";
-    sortBy?: EmployeeSortField;
-    sortOrder?: SortOrder;
+    sortBy?: EmployeeSortField | "";
+    sortOrder?: SortOrder | "";
     page?: number;
     pageSize?: number;
   },
@@ -172,10 +172,26 @@ export function applyDirectoryUpdates(
       updates.payFrequency !== undefined
         ? updates.payFrequency || undefined
         : current.payFrequency,
+    sortBy:
+      updates.sortBy !== undefined
+        ? updates.sortBy || DEFAULT_SORT_BY
+        : current.sortBy,
+    sortOrder:
+      updates.sortOrder !== undefined
+        ? updates.sortOrder || DEFAULT_SORT_ORDER
+        : current.sortOrder,
   };
 
   if (options?.resetPage !== false && updates.page === undefined) {
     next.page = DEFAULT_PAGE;
+  }
+
+  if (updates.page !== undefined) {
+    next.page = updates.page;
+  }
+
+  if (updates.pageSize !== undefined) {
+    next.pageSize = updates.pageSize || DEFAULT_PAGE_SIZE;
   }
 
   return next;

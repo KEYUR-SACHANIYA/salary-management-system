@@ -4,7 +4,7 @@ import {
   convertCurrency,
   getCompensationStatus,
   validateCompensation,
-} from "../src/shared/pay-rules";
+} from "../../src/shared/pay-rules";
 
 const TODAY = "2026-09-24";
 

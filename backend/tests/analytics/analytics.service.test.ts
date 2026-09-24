@@ -1,8 +1,8 @@
-import { AnalyticsService } from "../src/modules/analytics/analytics.service";
-import type { AnalyticsRepository } from "../src/modules/analytics/analytics.repository";
-import type { SalaryAnalytics } from "../src/modules/analytics/analytics.types";
-import { CURRENCIES, type Currency } from "../src/shared/pay-rules";
-import { ValidationError } from "../src/shared/errors";
+import { AnalyticsService } from "../../src/modules/analytics/analytics.service";
+import type { AnalyticsRepository } from "../../src/modules/analytics/analytics.repository";
+import type { SalaryAnalytics } from "../../src/modules/analytics/analytics.types";
+import { CURRENCIES, type Currency } from "../../src/shared/pay-rules";
+import { ValidationError } from "../../src/shared/errors";
 
 const fixture: SalaryAnalytics = {
   reportingCurrency: "USD",

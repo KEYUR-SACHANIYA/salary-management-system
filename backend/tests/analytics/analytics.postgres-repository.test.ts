@@ -1,23 +1,29 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Pool } from "pg";
-import { PostgresAnalyticsRepository } from "../src/modules/analytics/analytics.postgres-repository";
-import { calculateReportingSalary, CURRENCIES } from "../src/shared/pay-rules";
-import { ValidationError } from "../src/shared/errors";
-import type { Currency, PayFrequency } from "../src/shared/pay-rules";
+import { PostgresAnalyticsRepository } from "../../src/modules/analytics/analytics.postgres-repository";
+import { calculateReportingSalary, CURRENCIES } from "../../src/shared/pay-rules";
+import { ValidationError } from "../../src/shared/errors";
+import type { Currency, PayFrequency } from "../../src/shared/pay-rules";
 
 const RUN = `Anl${Date.now().toString(36).slice(-7)}`;
 
 function databaseUrl(): string {
-  if (process.env.DATABASE_URL && !process.env.DATABASE_URL.startsWith("DATABASE_URL=")) {
+  if (
+    process.env.DATABASE_URL &&
+    !process.env.DATABASE_URL.startsWith("DATABASE_URL=")
+  ) {
     return process.env.DATABASE_URL;
   }
 
-  const file = fs.readFileSync(path.join(__dirname, "..", ".env"), "utf8");
-  const line = file.split(/\r?\n/).find((entry) => entry.startsWith("DATABASE_URL="));
+  const file = fs.readFileSync(path.join(__dirname, "..", "..", ".env"), "utf8");
+  const line = file
+    .split(/\r?\n/)
+    .find((entry) => entry.startsWith("DATABASE_URL="));
   if (!line) throw new Error("DATABASE_URL is required for repository tests");
   let value = line.slice("DATABASE_URL=".length).trim();
-  if (value.startsWith("DATABASE_URL=")) value = value.slice("DATABASE_URL=".length);
+  if (value.startsWith("DATABASE_URL="))
+    value = value.slice("DATABASE_URL=".length);
   return value;
 }
 
@@ -25,12 +31,12 @@ describe("PostgresAnalyticsRepository", () => {
   jest.setTimeout(30_000);
   const pool = new Pool({ connectionString: databaseUrl() });
   const repository = new PostgresAnalyticsRepository(pool);
-  const employeeIds: string[] = [];
 
   afterAll(async () => {
-    if (employeeIds.length > 0) {
-      await pool.query("DELETE FROM employees WHERE id = ANY($1::uuid[])", [employeeIds]);
-    }
+    await pool.query("DELETE FROM employees WHERE employee_code LIKE $1", [
+      `${RUN}%`,
+    ]);
+
     await pool.end();
   });
 
@@ -39,18 +45,34 @@ describe("PostgresAnalyticsRepository", () => {
     const department = `${RUN}Dept`;
     const before = await repository.getSalaryAnalytics("USD");
 
-    employeeIds.push(await insertPay(pool, { country, department, amount: "100000.00" }));
-    employeeIds.push(await insertPay(pool, { country, department, amount: "50000.00" }));
-    employeeIds.push(await insertPay(pool, { country, department, amount: "25000.00" }));
+    await insertPay(pool, { country, department, amount: "100000.00" });
+    await insertPay(pool, { country, department, amount: "50000.00" });
+    await insertPay(pool, { country, department, amount: "25000.00" });
 
     const after = await repository.getSalaryAnalytics("USD");
     const group = after.byCountry.find((row) => row.country === country);
-    const dept = after.byDepartment.find((row) => row.department === department);
+    const dept = after.byDepartment.find(
+      (row) => row.department === department,
+    );
 
-    expect(after.overview.employeeCount).toBe(before.overview.employeeCount + 3);
-    expect(after.overview.totalAnnualCompensation).toBe(addMoney(before.overview.totalAnnualCompensation, "175000.00"));
-    expect(compareMoney(after.overview.lowestAnnualCompensation, after.overview.medianAnnualCompensation) <= 0).toBe(true);
-    expect(compareMoney(after.overview.medianAnnualCompensation, after.overview.highestAnnualCompensation) <= 0).toBe(true);
+    expect(after.overview.employeeCount).toBe(
+      before.overview.employeeCount + 3,
+    );
+    expect(after.overview.totalAnnualCompensation).toBe(
+      addMoney(before.overview.totalAnnualCompensation, "175000.00"),
+    );
+    expect(
+      compareMoney(
+        after.overview.lowestAnnualCompensation,
+        after.overview.medianAnnualCompensation,
+      ) <= 0,
+    ).toBe(true);
+    expect(
+      compareMoney(
+        after.overview.medianAnnualCompensation,
+        after.overview.highestAnnualCompensation,
+      ) <= 0,
+    ).toBe(true);
     expect(group).toEqual({
       country,
       employeeCount: 3,
@@ -67,7 +89,11 @@ describe("PostgresAnalyticsRepository", () => {
 
   it("converts current pay into INR and GBP reporting currency", async () => {
     const country = `${RUN}Fx`;
-    employeeIds.push(await insertPay(pool, { country, department: `${RUN}FxD`, amount: "100000.00" }));
+    await insertPay(pool, {
+      country,
+      department: `${RUN}FxD`,
+      amount: "100000.00",
+    });
 
     const inr = await repository.getSalaryAnalytics("INR");
     const gbp = await repository.getSalaryAnalytics("GBP");
@@ -80,40 +106,42 @@ describe("PostgresAnalyticsRepository", () => {
       "GBP",
     );
 
-    expect(inr.byCountry.find((row) => row.country === country)?.totalAnnualCompensation).toBe(expectedInr);
-    expect(gbp.byCountry.find((row) => row.country === country)?.totalAnnualCompensation).toBe(expectedGbp);
+    expect(
+      inr.byCountry.find((row) => row.country === country)
+        ?.totalAnnualCompensation,
+    ).toBe(expectedInr);
+    expect(
+      gbp.byCountry.find((row) => row.country === country)
+        ?.totalAnnualCompensation,
+    ).toBe(expectedGbp);
     expect(inr.reportingCurrency).toBe("INR");
     expect(gbp.reportingCurrency).toBe("GBP");
   });
 
   it("annualizes monthly, weekly, and hourly current pay", async () => {
     const country = `${RUN}Freq`;
-    employeeIds.push(
-      await insertPay(pool, {
-        country,
-        department: `${RUN}FreqD`,
-        amount: "10000.00",
-        payFrequency: "MONTHLY",
-      }),
-    );
-    employeeIds.push(
-      await insertPay(pool, {
-        country,
-        department: `${RUN}FreqD`,
-        amount: "1000.00",
-        payFrequency: "WEEKLY",
-      }),
-    );
-    employeeIds.push(
-      await insertPay(pool, {
-        country,
-        department: `${RUN}FreqD`,
-        amount: "50.00",
-        payFrequency: "HOURLY",
-      }),
-    );
+    await insertPay(pool, {
+      country,
+      department: `${RUN}FreqD`,
+      amount: "10000.00",
+      payFrequency: "MONTHLY",
+    });
+    await insertPay(pool, {
+      country,
+      department: `${RUN}FreqD`,
+      amount: "1000.00",
+      payFrequency: "WEEKLY",
+    });
+    await insertPay(pool, {
+      country,
+      department: `${RUN}FreqD`,
+      amount: "50.00",
+      payFrequency: "HOURLY",
+    });
 
-    const group = (await repository.getSalaryAnalytics("USD")).byCountry.find((row) => row.country === country);
+    const group = (await repository.getSalaryAnalytics("USD")).byCountry.find(
+      (row) => row.country === country,
+    );
     expect(group?.totalAnnualCompensation).toBe("276000.00");
     expect(group?.employeeCount).toBe(3);
   });
@@ -121,7 +149,6 @@ describe("PostgresAnalyticsRepository", () => {
   it("excludes future compensation from current analytics", async () => {
     const country = `${RUN}Fut`;
     const id = await insertEmployee(pool, `${RUN}F`, country, `${RUN}FutD`);
-    employeeIds.push(id);
     await insertCompensation(pool, id, {
       amount: "80000.00",
       from: "2025-01-01",
@@ -135,7 +162,9 @@ describe("PostgresAnalyticsRepository", () => {
       reason: "PROMOTION",
     });
 
-    const group = (await repository.getSalaryAnalytics("USD")).byCountry.find((row) => row.country === country);
+    const group = (await repository.getSalaryAnalytics("USD")).byCountry.find(
+      (row) => row.country === country,
+    );
     expect(group).toEqual({
       country,
       employeeCount: 1,
@@ -147,7 +176,6 @@ describe("PostgresAnalyticsRepository", () => {
   it("excludes historical compensation from current analytics", async () => {
     const country = `${RUN}His`;
     const id = await insertEmployee(pool, `${RUN}H`, country, `${RUN}HisD`);
-    employeeIds.push(id);
     await insertCompensation(pool, id, {
       amount: "40000.00",
       from: "2020-01-01",
@@ -161,7 +189,9 @@ describe("PostgresAnalyticsRepository", () => {
       reason: "ANNUAL_REVIEW",
     });
 
-    const group = (await repository.getSalaryAnalytics("USD")).byCountry.find((row) => row.country === country);
+    const group = (await repository.getSalaryAnalytics("USD")).byCountry.find(
+      (row) => row.country === country,
+    );
     expect(group?.totalAnnualCompensation).toBe("90000.00");
     expect(group?.employeeCount).toBe(1);
   });
@@ -169,7 +199,6 @@ describe("PostgresAnalyticsRepository", () => {
   it("does not treat employees without current pay as zero-salary rows", async () => {
     const country = `${RUN}None`;
     const id = await insertEmployee(pool, `${RUN}N`, country, `${RUN}NoneD`);
-    employeeIds.push(id);
     await insertCompensation(pool, id, {
       amount: "70000.00",
       from: "2099-01-01",
@@ -178,21 +207,23 @@ describe("PostgresAnalyticsRepository", () => {
     });
 
     const analytics = await repository.getSalaryAnalytics("USD");
-    expect(analytics.byCountry.find((row) => row.country === country)).toBeUndefined();
-    expect(analytics.byDepartment.find((row) => row.department === `${RUN}NoneD`)).toBeUndefined();
+    expect(
+      analytics.byCountry.find((row) => row.country === country),
+    ).toBeUndefined();
+    expect(
+      analytics.byDepartment.find((row) => row.department === `${RUN}NoneD`),
+    ).toBeUndefined();
   });
 
   it("keeps native-currency totals in the original currency", async () => {
     const country = `${RUN}Nat`;
     const before = await repository.getSalaryAnalytics("USD");
-    employeeIds.push(
-      await insertPay(pool, {
-        country,
-        department: `${RUN}NatD`,
-        amount: "1000.00",
-        currency: "EUR",
-      }),
-    );
+    await insertPay(pool, {
+      country,
+      department: `${RUN}NatD`,
+      amount: "1000.00",
+      currency: "EUR",
+    });
 
     const after = await repository.getSalaryAnalytics("USD");
     const nativeBefore = nativeTotal(before, "EUR");
@@ -203,17 +234,34 @@ describe("PostgresAnalyticsRepository", () => {
     );
 
     expect(nativeAfter).toBe(addMoney(nativeBefore, "1000.00"));
-    expect(after.byCountry.find((row) => row.country === country)?.totalAnnualCompensation).toBe(converted);
+    expect(
+      after.byCountry.find((row) => row.country === country)
+        ?.totalAnnualCompensation,
+    ).toBe(converted);
     expect(nativeAfter).not.toBe(converted);
   });
 
   it("orders breakdowns by total descending then name ascending", async () => {
-    employeeIds.push(await insertPay(pool, { country: `${RUN}Z`, department: `${RUN}Z`, amount: "300000.00" }));
-    employeeIds.push(await insertPay(pool, { country: `${RUN}A`, department: `${RUN}A`, amount: "200000.00" }));
-    employeeIds.push(await insertPay(pool, { country: `${RUN}B`, department: `${RUN}B`, amount: "200000.00" }));
+    await insertPay(pool, {
+      country: `${RUN}Z`,
+      department: `${RUN}Z`,
+      amount: "300000.00",
+    });
+    await insertPay(pool, {
+      country: `${RUN}A`,
+      department: `${RUN}A`,
+      amount: "200000.00",
+    });
+    await insertPay(pool, {
+      country: `${RUN}B`,
+      department: `${RUN}B`,
+      amount: "200000.00",
+    });
 
     const analytics = await repository.getSalaryAnalytics("USD");
-    const countries = analytics.byCountry.filter((row) => row.country.startsWith(RUN)).map((row) => row.country);
+    const countries = analytics.byCountry
+      .filter((row) => row.country.startsWith(RUN))
+      .map((row) => row.country);
     const z = countries.indexOf(`${RUN}Z`);
     const a = countries.indexOf(`${RUN}A`);
     const b = countries.indexOf(`${RUN}B`);
@@ -223,18 +271,29 @@ describe("PostgresAnalyticsRepository", () => {
   });
 
   it("rejects an unsupported reporting currency", async () => {
-    await expect(repository.getSalaryAnalytics("JPY" as Currency)).rejects.toBeInstanceOf(ValidationError);
+    await expect(
+      repository.getSalaryAnalytics("JPY" as Currency),
+    ).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("reads the seeded dataset as 10,000 current employees across all currencies and departments", async () => {
     const analytics = await repository.getSalaryAnalytics("USD");
-    const testCountries = analytics.byCountry.filter((row) => row.country.startsWith(RUN));
-    const seededCount = analytics.overview.employeeCount - testCountries.reduce((sum, row) => sum + row.employeeCount, 0);
+    const testCountries = analytics.byCountry.filter((row) =>
+      row.country.startsWith(RUN),
+    );
+    const seededCount =
+      analytics.overview.employeeCount -
+      testCountries.reduce((sum, row) => sum + row.employeeCount, 0);
 
     expect(seededCount).toBe(10_000);
-    expect(analytics.byNativeCurrency.map((row) => row.currency).sort()).toEqual([...CURRENCIES].sort());
     expect(
-      analytics.byDepartment.filter((row) => !row.department.startsWith(RUN)).map((row) => row.department).sort(),
+      analytics.byNativeCurrency.map((row) => row.currency).sort(),
+    ).toEqual([...CURRENCIES].sort());
+    expect(
+      analytics.byDepartment
+        .filter((row) => !row.department.startsWith(RUN))
+        .map((row) => row.department)
+        .sort(),
     ).toEqual([
       "Customer Support",
       "Engineering",
@@ -249,10 +308,18 @@ describe("PostgresAnalyticsRepository", () => {
 });
 
 function nativeTotal(
-  analytics: { byNativeCurrency: Array<{ currency: Currency; totalAnnualCompensation: string }> },
+  analytics: {
+    byNativeCurrency: Array<{
+      currency: Currency;
+      totalAnnualCompensation: string;
+    }>;
+  },
   currency: Currency,
 ): string {
-  return analytics.byNativeCurrency.find((row) => row.currency === currency)?.totalAnnualCompensation ?? "0.00";
+  return (
+    analytics.byNativeCurrency.find((row) => row.currency === currency)
+      ?.totalAnnualCompensation ?? "0.00"
+  );
 }
 
 async function insertPay(
@@ -265,7 +332,12 @@ async function insertPay(
     payFrequency?: PayFrequency;
   },
 ): Promise<string> {
-  const id = await insertEmployee(pool, `${RUN}${employeeCounter++}`, row.country, row.department);
+  const id = await insertEmployee(
+    pool,
+    `${RUN}${employeeCounter++}`,
+    row.country,
+    row.department,
+  );
   await insertCompensation(pool, id, {
     amount: row.amount,
     currency: row.currency ?? "USD",
@@ -279,7 +351,12 @@ async function insertPay(
 
 let employeeCounter = 0;
 
-async function insertEmployee(pool: Pool, code: string, country: string, department: string): Promise<string> {
+async function insertEmployee(
+  pool: Pool,
+  code: string,
+  country: string,
+  department: string,
+): Promise<string> {
   const result = await pool.query<{ id: string }>(
     `
       INSERT INTO employees (employee_code, name, country, department, role)

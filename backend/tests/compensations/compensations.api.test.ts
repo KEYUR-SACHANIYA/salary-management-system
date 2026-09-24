@@ -1,11 +1,11 @@
 import request from "supertest";
-import { createApp } from "../src/app";
-import { CompensationController } from "../src/modules/compensations/compensation.controller";
-import { createCompensationRouter } from "../src/modules/compensations/compensation.routes";
-import { CompensationService } from "../src/modules/compensations/compensation.service";
-import type { CompensationRepository } from "../src/modules/compensations/compensation.repository";
-import type { Compensation, CreateCompensationInput } from "../src/modules/compensations/compensation.types";
-import { EmployeeNotFoundError } from "../src/shared/errors";
+import { createApp } from "../../src/app";
+import { CompensationController } from "../../src/modules/compensations/compensation.controller";
+import { createCompensationRouter } from "../../src/modules/compensations/compensation.routes";
+import { CompensationService } from "../../src/modules/compensations/compensation.service";
+import type { CompensationRepository } from "../../src/modules/compensations/compensation.repository";
+import type { Compensation, CreateCompensationInput } from "../../src/modules/compensations/compensation.types";
+import { EmployeeNotFoundError } from "../../src/shared/errors";
 
 const EMPLOYEE_ID = "11111111-1111-4111-8111-111111111111";
 const MISSING_ID = "00000000-0000-4000-8000-000000000000";
@@ -49,7 +49,7 @@ class FakeCompensationRepository implements CompensationRepository {
   addError: Error | undefined;
   addCalls: Array<{ employeeId: string; input: CreateCompensationInput }> = [];
 
-  async getHistory(_employeeId: string): Promise<Compensation[]> {
+  async getHistory(): Promise<Compensation[]> {
     if (this.getHistoryError) throw this.getHistoryError;
     return this.history;
   }
@@ -133,7 +133,7 @@ describe("Compensation HTTP API", () => {
 
     it("maps unexpected errors to INTERNAL_SERVER_ERROR without internal details", async () => {
       const repository = new FakeCompensationRepository();
-      repository.getHistoryError = new Error("password=super-secret connection lost");
+      repository.getHistoryError = new Error("database connection lost")
       const response = await request(appWith(repository)).get(
         `/api/v1/employees/${EMPLOYEE_ID}/compensations`,
       );
@@ -301,7 +301,7 @@ describe("Compensation HTTP API", () => {
 
     it("maps unexpected errors to INTERNAL_SERVER_ERROR without internal details", async () => {
       const repository = new FakeCompensationRepository();
-      repository.addError = new Error("password=super-secret connection lost");
+      repository.addError = new Error("database connection lost")
       const response = await request(appWith(repository))
         .post(`/api/v1/employees/${EMPLOYEE_ID}/compensations`)
         .send(validBody());

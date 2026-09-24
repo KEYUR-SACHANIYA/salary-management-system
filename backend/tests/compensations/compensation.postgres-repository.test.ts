@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Pool } from "pg";
-import { PostgresCompensationRepository } from "../src/modules/compensations/compensation.postgres-repository";
-import { EmployeeNotFoundError, ValidationError } from "../src/shared/errors";
-import type { CreateCompensationInput } from "../src/modules/compensations/compensation.types";
+import { PostgresCompensationRepository } from "../../src/modules/compensations/compensation.postgres-repository";
+import { EmployeeNotFoundError, ValidationError } from "../../src/shared/errors";
+import type { CreateCompensationInput } from "../../src/modules/compensations/compensation.types";
 
 const MISSING_ID = "00000000-0000-4000-8000-000000000000";
 
@@ -12,7 +12,7 @@ function databaseUrl(): string {
     return process.env.DATABASE_URL;
   }
 
-  const file = fs.readFileSync(path.join(__dirname, "..", ".env"), "utf8");
+  const file = fs.readFileSync(path.join(__dirname, "..", "..", ".env"), "utf8");
   const line = file.split(/\r?\n/).find((entry) => entry.startsWith("DATABASE_URL="));
   if (!line) throw new Error("DATABASE_URL is required for repository tests");
   let value = line.slice("DATABASE_URL=".length).trim();
@@ -20,24 +20,25 @@ function databaseUrl(): string {
   return value;
 }
 
-const RUN_PREFIX = `C${Date.now().toString(36).slice(-8)}`;
+const RUN_PREFIX = `TESTCOMP${Date.now().toString(36).slice(-8)}`;
 
 describe("PostgresCompensationRepository", () => {
   jest.setTimeout(30_000);
+
   const pool = new Pool({ connectionString: databaseUrl() });
   const repository = new PostgresCompensationRepository(pool);
-  const employeeIds: string[] = [];
 
   afterAll(async () => {
-    if (employeeIds.length > 0) {
-      await pool.query("DELETE FROM employees WHERE id = ANY($1::uuid[])", [employeeIds]);
-    }
+    await pool.query(
+      "DELETE FROM employees WHERE employee_code LIKE $1",
+      [`${RUN_PREFIX}%`],
+    );
+
     await pool.end();
   });
 
   it("returns history newest first for an existing employee", async () => {
     const id = await insertEmployee(pool, `${RUN_PREFIX}H`);
-    employeeIds.push(id);
     await insertCompensation(pool, id, "80000.00", "2024-01-01", "2024-12-31", "HIRE");
     await insertCompensation(pool, id, "90000.00", "2025-01-01", null, "ANNUAL_REVIEW");
 
@@ -49,7 +50,6 @@ describe("PostgresCompensationRepository", () => {
 
   it("returns an empty history when the employee exists but has no compensation rows", async () => {
     const id = await insertEmployee(pool, `${RUN_PREFIX}E`);
-    employeeIds.push(id);
 
     await expect(repository.getHistory(id)).resolves.toEqual([]);
   });
@@ -65,7 +65,7 @@ describe("PostgresCompensationRepository", () => {
 
   it("closes the current period and inserts an immediate salary change", async () => {
     const id = await insertEmployee(pool, `${RUN_PREFIX}I`);
-    employeeIds.push(id);
+    
     await insertCompensation(pool, id, "100000.00", "2025-01-01", null, "HIRE");
 
     const created = await repository.addCompensation(
@@ -94,7 +94,7 @@ describe("PostgresCompensationRepository", () => {
 
   it("schedules a future change without replacing the current salary", async () => {
     const id = await insertEmployee(pool, `${RUN_PREFIX}F`);
-    employeeIds.push(id);
+    
     await insertCompensation(pool, id, "100000.00", "2025-01-01", null, "HIRE");
 
     await repository.addCompensation(id, change("120000.00", "2026-10-01", "PROMOTION"));
@@ -115,7 +115,7 @@ describe("PostgresCompensationRepository", () => {
 
   it("closes the first future period when a later future change is added", async () => {
     const id = await insertEmployee(pool, `${RUN_PREFIX}F2`);
-    employeeIds.push(id);
+    
     await insertCompensation(pool, id, "100000.00", "2025-01-01", "2026-09-30", "HIRE");
     await insertCompensation(pool, id, "120000.00", "2026-10-01", null, "PROMOTION");
 
@@ -133,7 +133,7 @@ describe("PostgresCompensationRepository", () => {
 
   it("splits an open period when the new start falls inside it", async () => {
     const id = await insertEmployee(pool, `${RUN_PREFIX}S`);
-    employeeIds.push(id);
+    
     await insertCompensation(pool, id, "100000.00", "2025-01-01", null, "HIRE");
 
     await repository.addCompensation(id, change("120000.00", "2026-01-01", "ANNUAL_REVIEW"));
@@ -154,7 +154,7 @@ describe("PostgresCompensationRepository", () => {
 
   it("does not change historical amount, start date, or reason when closing a period", async () => {
     const id = await insertEmployee(pool, `${RUN_PREFIX}H2`);
-    employeeIds.push(id);
+    
     await insertCompensation(pool, id, "80000.00", "2023-01-01", "2023-12-31", "HIRE");
     await insertCompensation(pool, id, "100000.00", "2024-01-01", null, "ANNUAL_REVIEW");
 
@@ -172,7 +172,7 @@ describe("PostgresCompensationRepository", () => {
 
   it("rejects a start date that is not after the open period", async () => {
     const id = await insertEmployee(pool, `${RUN_PREFIX}B`);
-    employeeIds.push(id);
+    
     await insertCompensation(pool, id, "100000.00", "2026-01-01", null, "HIRE");
 
     await expect(
@@ -186,7 +186,7 @@ describe("PostgresCompensationRepository", () => {
 
   it("rolls back when the insert is rejected by the database", async () => {
     const id = await insertEmployee(pool, `${RUN_PREFIX}R`);
-    employeeIds.push(id);
+    
     await insertCompensation(pool, id, "100000.00", "2025-01-01", null, "HIRE");
 
     await expect(
@@ -203,7 +203,7 @@ describe("PostgresCompensationRepository", () => {
 
   it("serializes concurrent changes so only one open row remains", async () => {
     const id = await insertEmployee(pool, `${RUN_PREFIX}X`);
-    employeeIds.push(id);
+    
     await insertCompensation(pool, id, "100000.00", "2025-01-01", null, "HIRE");
 
     const results = await Promise.allSettled([

@@ -7,27 +7,32 @@
     "start": "node dist/main.js",
     "test": "jest",
     "test:watch": "jest --watch",
+    "lint": "eslint .",
     "db:seed": "node --env-file=.env --import tsx src/db/seed/seed.ts"
   },
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "roots": ["<rootDir>/tests"]
+    "roots": ["<rootDir>/tests"],
+    "maxWorkers": 1
   },
   "dependencies": {
     "express": "^4.21.2",
     "pg": "^8.16.3"
   },
   "devDependencies": {
+    "@eslint/js": "^9.0.0",
     "@types/express": "^4.17.23",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.17.2",
     "@types/pg": "^8.15.5",
     "@types/supertest": "^6.0.3",
+    "eslint": "^9.0.0",
     "jest": "^29.7.0",
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.1",
     "tsx": "^4.20.5",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.0.0"
   }
 }

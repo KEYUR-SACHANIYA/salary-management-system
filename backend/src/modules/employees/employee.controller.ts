@@ -8,9 +8,6 @@ const SORT_BY = ["name", "employeeCode", "salary"] as const;
 const SORT_ORDER = ["asc", "desc"] as const;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-type SortBy = EmployeeListQuery["sortBy"];
-type SortOrder = EmployeeListQuery["sortOrder"];
-
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 

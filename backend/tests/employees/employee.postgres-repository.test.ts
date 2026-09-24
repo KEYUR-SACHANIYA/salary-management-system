@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Pool } from "pg";
-import { PostgresEmployeeRepository } from "../src/modules/employees/employee.postgres-repository";
-import { calculateReportingSalary } from "../src/shared/pay-rules";
-import type { EmployeeListQuery } from "../src/modules/employees/employee.types";
+import { PostgresEmployeeRepository } from "../../src/modules/employees/employee.postgres-repository";
+import { calculateReportingSalary } from "../../src/shared/pay-rules";
+import type { EmployeeListQuery } from "../../src/modules/employees/employee.types";
 
 const TEST_PREFIX = "TESTAPI";
 const MISSING_ID = "00000000-0000-4000-8000-000000000000";
@@ -13,7 +13,7 @@ function databaseUrl(): string {
     return process.env.DATABASE_URL;
   }
 
-  const file = fs.readFileSync(path.join(__dirname, "..", ".env"), "utf8");
+  const file = fs.readFileSync(path.join(__dirname, "..", "..", ".env"), "utf8");
   const line = file.split(/\r?\n/).find((entry) => entry.startsWith("DATABASE_URL="));
   if (!line) throw new Error("DATABASE_URL is required for repository tests");
   let value = line.slice("DATABASE_URL=".length).trim();
@@ -36,12 +36,12 @@ describe("PostgresEmployeeRepository", () => {
   jest.setTimeout(30_000);
   const pool = new Pool({ connectionString: databaseUrl() });
   const repository = new PostgresEmployeeRepository(pool);
-  const ids: string[] = [];
 
   afterAll(async () => {
-    if (ids.length > 0) {
-      await pool.query("DELETE FROM employees WHERE id = ANY($1::uuid[])", [ids]);
-    }
+    await pool.query("DELETE FROM employees WHERE employee_code LIKE $1", [
+      "TESTAPI%",
+    ]);
+
     await pool.end();
   });
 
@@ -172,7 +172,6 @@ describe("PostgresEmployeeRepository", () => {
 
   it("does not treat future compensation as current", async () => {
     const id = await insertEmployee(pool, `${TEST_PREFIX}FUT`);
-    ids.push(id);
     await insertCompensation(pool, id, {
       amount: "50000.00",
       from: "2099-01-01",
@@ -186,7 +185,6 @@ describe("PostgresEmployeeRepository", () => {
 
   it("does not treat historical compensation as current", async () => {
     const id = await insertEmployee(pool, `${TEST_PREFIX}HIS`);
-    ids.push(id);
     await insertCompensation(pool, id, {
       amount: "50000.00",
       from: "2020-01-01",
@@ -200,7 +198,6 @@ describe("PostgresEmployeeRepository", () => {
 
   it("returns the current row when a future salary is also scheduled", async () => {
     const id = await insertEmployee(pool, `${TEST_PREFIX}CUR`);
-    ids.push(id);
     await insertCompensation(pool, id, {
       amount: "80000.00",
       from: "2026-01-01",

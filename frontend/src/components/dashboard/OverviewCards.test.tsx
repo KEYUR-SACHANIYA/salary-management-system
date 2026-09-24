@@ -1,9 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { BreakdownTable } from "./BreakdownTable";
+import { CompensationRange } from "./CompensationRange";
 import { OverviewCards } from "./OverviewCards";
 
 describe("dashboard analytics rendering", () => {
-  it("renders the primary KPI hierarchy and compensation range in the reporting currency", () => {
+  it("renders the primary KPI hierarchy in the reporting currency", () => {
     render(
       <OverviewCards
         reportingCurrency="USD"
@@ -22,6 +23,23 @@ describe("dashboard analytics rendering", () => {
     expect(screen.getByText("$1.13B")).toBeInTheDocument();
     expect(screen.getByText("$112.8K")).toBeInTheDocument();
     expect(screen.getByText("$104.9K")).toBeInTheDocument();
+  });
+
+  it("renders the compensation range in the reporting currency", () => {
+    render(
+      <CompensationRange
+        overview={{
+          employeeCount: 10000,
+          totalAnnualCompensation: "1127698534.40",
+          averageAnnualCompensation: "112769.85",
+          medianAnnualCompensation: "104934.88",
+          lowestAnnualCompensation: "6429.31",
+          highestAnnualCompensation: "312414.96",
+        }}
+        reportingCurrency="USD"
+      />,
+    );
+
     expect(screen.getByText("Compensation range")).toBeInTheDocument();
     expect(screen.getByText("$6.4K")).toBeInTheDocument();
     expect(screen.getByText("$312.4K")).toBeInTheDocument();
@@ -45,7 +63,7 @@ describe("dashboard analytics rendering", () => {
       />,
     );
 
-    expect(screen.getByRole("columnheader", { name: "Currency" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Currency breakdown")).toBeInTheDocument();
     expect(screen.getByText("INR 5,293,755,156.55")).toBeInTheDocument();
     expect(screen.queryByText("Average")).not.toBeInTheDocument();
   });

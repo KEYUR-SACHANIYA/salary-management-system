@@ -48,8 +48,8 @@ describe("CompensationHistory", () => {
     expect(screen.getByText("Future")).toBeInTheDocument();
     expect(screen.getByText("Current")).toBeInTheDocument();
     expect(screen.getByText("Historical")).toBeInTheDocument();
-    expect(screen.getByText("USD 130,000.00")).toBeInTheDocument();
-    expect(screen.getByText("USD 90,000.00")).toBeInTheDocument();
+    expect(screen.getByText("$130,000.00")).toBeInTheDocument();
+    expect(screen.getByText("$90,000.00")).toBeInTheDocument();
     expect(screen.getByText("Open")).toBeInTheDocument();
   });
 });

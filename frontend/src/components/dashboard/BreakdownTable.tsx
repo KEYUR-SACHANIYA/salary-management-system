@@ -1,6 +1,13 @@
 "use client";
 
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import {
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  type TooltipContentProps,
+} from "recharts";
 import { formatCount, formatMoney } from "@/lib/formatting";
 
 type BreakdownRow = {
@@ -35,6 +42,8 @@ export function BreakdownTable({
   showAverage?: boolean;
   description?: string;
 }) {
+  void showAverage;
+
   const totalEmployees = rows.reduce((sum, row) => sum + row.employeeCount, 0);
   const data = rows.map((row) => ({
     name: row.label,
@@ -44,9 +53,7 @@ export function BreakdownTable({
     fill: CURRENCY_COLORS[row.currency] ?? "#94A3B8",
   }));
 
-  const chartTooltip = (props: any) => {
-    const { active, payload } = props;
-
+  const chartTooltip = ({ active, payload }: TooltipContentProps) => {
     if (!active || !payload || payload.length === 0) {
       return null;
     }

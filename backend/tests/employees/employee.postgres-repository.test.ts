@@ -32,9 +32,19 @@ function baseQuery(overrides: Partial<EmployeeListQuery> = {}): EmployeeListQuer
   };
 }
 
+function createPoolConfig(connectionString: string) {
+  const hostname = new URL(connectionString).hostname;
+  const usesRemoteDatabase = !["localhost", "127.0.0.1", "::1"].includes(hostname);
+
+  return {
+    connectionString,
+    ...(usesRemoteDatabase ? { ssl: { rejectUnauthorized: false } } : {}),
+  };
+}
+
 describe("PostgresEmployeeRepository", () => {
   jest.setTimeout(30_000);
-  const pool = new Pool({ connectionString: databaseUrl() });
+  const pool = new Pool(createPoolConfig(databaseUrl()));
   const repository = new PostgresEmployeeRepository(pool);
 
   afterAll(async () => {

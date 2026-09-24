@@ -1,6 +1,31 @@
-import { makeSchemaSqlIdempotent } from "../../src/db/seed/seed";
+jest.mock("pg", () => ({
+  __esModule: true,
+  default: {
+    Client: jest.fn(() => ({
+      connect: jest.fn(() => new Promise(() => undefined)),
+      query: jest.fn().mockResolvedValue({ rows: [] }),
+      end: jest.fn().mockResolvedValue(undefined),
+    })),
+  },
+}));
+
+jest.mock("../../src/db/seed/data-generator", () => ({
+  generateEmployees: jest.fn(() => ({
+    employees: [],
+    compensations: [],
+  })),
+}));
 
 describe("makeSchemaSqlIdempotent", () => {
+  beforeEach(() => {
+    jest.resetModules();
+    process.env.DATABASE_URL = "postgresql://user:pass@localhost:5432/testdb";
+  });
+
+  afterEach(() => {
+    delete process.env.DATABASE_URL;
+  });
+
   it("makes the schema safe to apply repeatedly", () => {
     const sql = `
       CREATE TABLE employees (
@@ -21,6 +46,7 @@ describe("makeSchemaSqlIdempotent", () => {
       ON employees (country);
     `;
 
+    const { makeSchemaSqlIdempotent } = jest.requireActual("../../src/db/seed/seed");
     const result = makeSchemaSqlIdempotent(sql);
 
     expect(result).toContain("CREATE TABLE IF NOT EXISTS employees");

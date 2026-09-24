@@ -27,9 +27,19 @@ function databaseUrl(): string {
   return value;
 }
 
+function createPoolConfig(connectionString: string) {
+  const hostname = new URL(connectionString).hostname;
+  const usesRemoteDatabase = !["localhost", "127.0.0.1", "::1"].includes(hostname);
+
+  return {
+    connectionString,
+    ...(usesRemoteDatabase ? { ssl: { rejectUnauthorized: false } } : {}),
+  };
+}
+
 describe("PostgresAnalyticsRepository", () => {
   jest.setTimeout(30_000);
-  const pool = new Pool({ connectionString: databaseUrl() });
+  const pool = new Pool(createPoolConfig(databaseUrl()));
   const repository = new PostgresAnalyticsRepository(pool);
 
   afterAll(async () => {

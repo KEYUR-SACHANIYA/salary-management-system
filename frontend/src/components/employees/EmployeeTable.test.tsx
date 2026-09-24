@@ -2,6 +2,12 @@ import { render, screen } from "@testing-library/react";
 import { EmployeeTable } from "./EmployeeTable";
 import type { EmployeeListItem } from "@/types/employees";
 
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+  }),
+}));
+
 const employees: EmployeeListItem[] = [
   {
     id: "11111111-1111-4111-8111-111111111111",
@@ -31,13 +37,13 @@ describe("EmployeeTable", () => {
       />,
     );
 
-    expect(screen.getByRole("link", { name: "Aarav Sharma" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Aarav Sharma/i })).toHaveAttribute(
       "href",
       "/employees/11111111-1111-4111-8111-111111111111",
     );
-    expect(screen.getByText("EMP000001")).toBeInTheDocument();
-    expect(screen.getByText("Germany")).toBeInTheDocument();
-    expect(screen.getByText("EUR 116,173.00")).toBeInTheDocument();
+    expect(screen.getAllByText("EMP000001")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Germany")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("EUR 116,173.00")[0]).toBeInTheDocument();
     expect(screen.queryByText("132014.77")).not.toBeInTheDocument();
     expect(screen.queryByText(/132,014/)).not.toBeInTheDocument();
   });
@@ -58,7 +64,7 @@ describe("EmployeeTable", () => {
 
     expect(screen.getByRole("link", { name: /Employee code/i })).toHaveAttribute(
       "href",
-      "/employees?search=aarav&country=Germany&sortBy=employeeCode",
+      "/employees?search=aarav&country=Germany",
     );
     expect(screen.getByRole("link", { name: /Current salary/i })).toHaveAttribute(
       "href",

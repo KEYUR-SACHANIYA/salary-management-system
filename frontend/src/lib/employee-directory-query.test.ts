@@ -58,7 +58,7 @@ describe("employee directory query", () => {
         page: 4,
         pageSize: 20,
         country: "Germany",
-        sortBy: "name",
+        sortBy: "employeeCode",
         sortOrder: "asc",
       },
       { department: "Engineering" },
@@ -74,14 +74,14 @@ describe("employee directory query", () => {
 
   it("resets page to 1 when sorting changes", () => {
     const next = applyDirectoryUpdates(
-      { page: 3, sortBy: "name", sortOrder: "asc" },
-      { sortBy: "employeeCode", sortOrder: "desc" },
+      { page: 3, sortBy: "employeeCode", sortOrder: "asc" },
+      { sortBy: "name", sortOrder: "desc" },
       { resetPage: true },
     );
 
     expect(next.page).toBe(1);
     expect(directoryHref(next)).toBe(
-      "/employees?sortBy=employeeCode&sortOrder=desc",
+      "/employees?sortBy=name&sortOrder=desc",
     );
   });
 
@@ -105,13 +105,13 @@ describe("employee directory query", () => {
       department: undefined,
       currency: undefined,
       payFrequency: undefined,
-      sortBy: "name",
+      sortBy: "employeeCode",
       sortOrder: "asc",
       reportingCurrency: "USD",
     };
 
     expect(directoryHref(defaults)).toBe("/employees");
-    expect(defaults.sortBy).toBe("name");
+    expect(defaults.sortBy).toBe("employeeCode");
     expect(defaults.sortOrder).toBe("asc");
   });
 

@@ -260,7 +260,6 @@ export function EmployeeFilters({
     if (urlSearch !== searchRef.current.trim()) {
       setDraft(urlSearch);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current.search, isPending]);
 
   // Cleanup pending debounce on unmount.

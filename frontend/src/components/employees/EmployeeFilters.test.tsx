@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { EmployeeFilters } from "./EmployeeFilters";
 
@@ -31,6 +31,7 @@ describe("EmployeeFilters", () => {
 
     expect(replace).toHaveBeenCalledWith(
       "/employees?search=aarav&country=Germany&department=Engineering",
+      { scroll: false },
     );
   });
 
@@ -39,13 +40,19 @@ describe("EmployeeFilters", () => {
 
     render(<EmployeeFilters searchParams={{ page: "2" }} />);
 
-    await user.type(screen.getByLabelText("Search"), "maya");
+    await user.type(screen.getByLabelText("Search employees"), "maya");
     expect(replace).not.toHaveBeenCalled();
 
-    jest.advanceTimersByTime(299);
+    act(() => {
+      jest.advanceTimersByTime(299);
+    });
     expect(replace).not.toHaveBeenCalled();
 
-    jest.advanceTimersByTime(1);
-    expect(replace).toHaveBeenCalledWith("/employees?search=maya");
+    act(() => {
+      jest.advanceTimersByTime(1);
+    });
+    expect(replace).toHaveBeenCalledWith("/employees?search=maya", {
+      scroll: false,
+    });
   });
 });

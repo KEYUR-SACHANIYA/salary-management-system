@@ -28,18 +28,19 @@ export function EmployeeDirectoryClient() {
   useEffect(() => {
     let active = true;
 
-    setIsLoading(true);
-    setErrorMessage(undefined);
+    const loadEmployees = async () => {
+      setIsLoading(true);
+      setErrorMessage(undefined);
 
-    getEmployees(query)
-      .then((nextResult) => {
+      try {
+        const nextResult = await getEmployees(query);
+
         if (!active) {
           return;
         }
 
         setResult(nextResult);
-      })
-      .catch((error) => {
+      } catch (error) {
         if (!active) {
           return;
         }
@@ -50,12 +51,14 @@ export function EmployeeDirectoryClient() {
             ? error.message
             : "Unable to load employees. Please try again.",
         );
-      })
-      .finally(() => {
+      } finally {
         if (active) {
           setIsLoading(false);
         }
-      });
+      }
+    };
+
+    void loadEmployees();
 
     return () => {
       active = false;

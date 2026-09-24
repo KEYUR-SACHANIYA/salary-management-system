@@ -1,5 +1,10 @@
+import { AverageMedianComparison } from "@/components/dashboard/AverageMedianComparison";
 import { BreakdownTable } from "@/components/dashboard/BreakdownTable";
+import { CompensationRange } from "@/components/dashboard/CompensationRange";
+import { CountryCompensationChart } from "@/components/dashboard/CountryCompensationChart";
+import { DepartmentCompensationChart } from "@/components/dashboard/DepartmentCompensationChart";
 import { FxRates } from "@/components/dashboard/FxRates";
+import { NativeCurrencyDistribution } from "@/components/dashboard/NativeCurrencyDistribution";
 import { OverviewCards, ViewEmployeesLink } from "@/components/dashboard/OverviewCards";
 import { ReportingCurrencySelect } from "@/components/dashboard/ReportingCurrencySelect";
 import { Alert } from "@/components/ui/Alert";
@@ -34,14 +39,17 @@ export default async function DashboardPage({
   return (
     <PageContainer>
       <PageHeader
-        title="Salary dashboard"
-        description="Current compensation only. Totals, averages, and ranges are annualized in the selected reporting currency. Native-currency totals stay in the original currency."
-        actions={<ViewEmployeesLink />}
+        title="Salary Overview"
+        description="Current compensation only. Annualized values are shown in the selected reporting currency, while native-currency totals remain in each employee's original currency."
+        actions={
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end">
+            <div className="w-full min-w-[180px] sm:w-[220px]">
+              <ReportingCurrencySelect value={reportingCurrency} />
+            </div>
+            <ViewEmployeesLink />
+          </div>
+        }
       />
-
-      <div className="mb-6 max-w-xs">
-        <ReportingCurrencySelect value={reportingCurrency} />
-      </div>
 
       {errorMessage ? (
         <Alert tone="error" title="Could not load dashboard">
@@ -55,43 +63,49 @@ export default async function DashboardPage({
             overview={analytics.overview}
             reportingCurrency={analytics.reportingCurrency}
           />
-          <BreakdownTable
-            title="By country"
-            caption="Annualized compensation by country"
-            labelHeader="Country"
-            rows={analytics.byCountry.map((row) => ({
-              label: row.country,
-              employeeCount: row.employeeCount,
-              totalAnnualCompensation: row.totalAnnualCompensation,
-              averageAnnualCompensation: row.averageAnnualCompensation,
-              currency: analytics.reportingCurrency,
-            }))}
-          />
-          <BreakdownTable
-            title="By department"
-            caption="Annualized compensation by department"
-            labelHeader="Department"
-            rows={analytics.byDepartment.map((row) => ({
-              label: row.department,
-              employeeCount: row.employeeCount,
-              totalAnnualCompensation: row.totalAnnualCompensation,
-              averageAnnualCompensation: row.averageAnnualCompensation,
-              currency: analytics.reportingCurrency,
-            }))}
-          />
-          <BreakdownTable
-            title="By native currency"
-            caption="Annualized totals in each original currency"
-            labelHeader="Currency"
-            showAverage={false}
-            rows={analytics.byNativeCurrency.map((row) => ({
-              label: row.currency,
-              employeeCount: row.employeeCount,
-              totalAnnualCompensation: row.totalAnnualCompensation,
-              currency: row.currency,
-            }))}
-          />
-          <FxRates />
+
+          <div className="grid gap-6 xl:grid-cols-[0.34fr_0.66fr]">
+            <CompensationRange
+              overview={analytics.overview}
+              reportingCurrency={analytics.reportingCurrency}
+            />
+            <DepartmentCompensationChart
+              rows={analytics.byDepartment}
+              reportingCurrency={analytics.reportingCurrency}
+            />
+          </div>
+
+          <div className="mt-6">
+            <CountryCompensationChart
+              rows={analytics.byCountry}
+              reportingCurrency={analytics.reportingCurrency}
+            />
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+            <AverageMedianComparison
+              overview={analytics.overview}
+              reportingCurrency={analytics.reportingCurrency}
+            />
+            <NativeCurrencyDistribution rows={analytics.byNativeCurrency} />
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+            <BreakdownTable
+              title="Native Currency Breakdown"
+              caption="Annualized totals in each original currency"
+              labelHeader="Currency"
+              showAverage={false}
+              description="Annualized compensation shown in each employee's original currency. Values are not converted."
+              rows={analytics.byNativeCurrency.map((row) => ({
+                label: row.currency,
+                employeeCount: row.employeeCount,
+                totalAnnualCompensation: row.totalAnnualCompensation,
+                currency: row.currency,
+              }))}
+            />
+            <FxRates />
+          </div>
         </div>
       ) : null}
     </PageContainer>

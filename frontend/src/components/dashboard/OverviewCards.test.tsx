@@ -3,7 +3,7 @@ import { BreakdownTable } from "./BreakdownTable";
 import { OverviewCards } from "./OverviewCards";
 
 describe("dashboard analytics rendering", () => {
-  it("renders overview amounts in the reporting currency", () => {
+  it("renders the primary KPI hierarchy and compensation range in the reporting currency", () => {
     render(
       <OverviewCards
         reportingCurrency="USD"
@@ -19,8 +19,12 @@ describe("dashboard analytics rendering", () => {
     );
 
     expect(screen.getByText("10,000")).toBeInTheDocument();
-    expect(screen.getByText("USD 1,127,698,534.40")).toBeInTheDocument();
-    expect(screen.getByText("USD 112,769.85")).toBeInTheDocument();
+    expect(screen.getByText("$1.13B")).toBeInTheDocument();
+    expect(screen.getByText("$112.8K")).toBeInTheDocument();
+    expect(screen.getByText("$104.9K")).toBeInTheDocument();
+    expect(screen.getByText("Compensation range")).toBeInTheDocument();
+    expect(screen.getByText("$6.4K")).toBeInTheDocument();
+    expect(screen.getByText("$312.4K")).toBeInTheDocument();
   });
 
   it("renders native-currency totals in the original currency", () => {

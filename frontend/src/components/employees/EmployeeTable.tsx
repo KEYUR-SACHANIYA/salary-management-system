@@ -1,4 +1,6 @@
+"use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { EmployeeSortField, SortOrder } from "@/lib/constants";
 import {
   applyDirectoryUpdates,
@@ -19,7 +21,8 @@ export function EmployeeTable({
   employees: EmployeeListItem[];
   query: EmployeeListParams;
 }) {
-  const sortBy = query.sortBy ?? "name";
+  const router = useRouter();
+  const sortBy = query.sortBy ?? "employeeCode";
   const sortOrder = query.sortOrder ?? "asc";
 
   function sortHref(field: EmployeeSortField): string {
@@ -96,16 +99,16 @@ export function EmployeeTable({
                 return (
                   <tr
                     key={employee.id}
-                    className="border-t border-slate-200 transition-colors hover:bg-slate-50"
+                    onClick={() => router.push(`/employees/${employee.id}`)}
+                    className="border-t border-slate-200 transition-colors hover:bg-slate-50 cursor-pointer"
                   >
                     <td className="max-w-[220px] px-3 py-3 align-top">
-                      <Link
-                        href={`/employees/${employee.id}`}
+                      <span
                         title={employee.name}
                         className="inline-block max-w-full truncate font-semibold text-slate-900 underline-offset-2 hover:underline"
                       >
                         {employee.name}
-                      </Link>
+                      </span>
                     </td>
                     <td className="px-3 py-3 align-top font-mono text-[11px] font-semibold tracking-[0.08em] text-slate-700">
                       {employee.employeeCode}
@@ -145,19 +148,20 @@ export function EmployeeTable({
           const compensation = employee.currentCompensation;
 
           return (
-            <article
+            <Link
               key={employee.id}
-              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+              href={`/employees/${employee.id}`}
+              className="group block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:bg-slate-50"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <Link
-                    href={`/employees/${employee.id}`}
-                    className="block truncate text-base font-semibold text-slate-900 underline-offset-2 hover:underline"
+                  <span
+                    className="block truncate text-base font-semibold text-slate-900 underline-offset-2 group-hover:underline"
                     title={employee.name}
                   >
                     {employee.name}
-                  </Link>
+                  </span>
+
                   <p className="mt-1 font-mono text-[10px] font-semibold tracking-[0.12em] text-slate-500">
                     {employee.employeeCode}
                   </p>
@@ -198,7 +202,7 @@ export function EmployeeTable({
                   </dd>
                 </div>
               </dl>
-            </article>
+            </Link>
           );
         })}
       </div>

@@ -21,7 +21,17 @@ if (!databaseUrl) {
   process.exit(1);
 }
 
-const pool = new Pool({ connectionString: databaseUrl });
+function createPoolConfig(connectionString: string) {
+  const hostname = new URL(connectionString).hostname;
+  const usesRemoteDatabase = !["localhost", "127.0.0.1", "::1"].includes(hostname);
+
+  return {
+    connectionString,
+    ...(usesRemoteDatabase ? { ssl: { rejectUnauthorized: false } } : {}),
+  };
+}
+
+const pool = new Pool(createPoolConfig(databaseUrl));
 
 const employeeRepository = new PostgresEmployeeRepository(pool);
 const employeeService = new EmployeeService(employeeRepository);

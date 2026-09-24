@@ -26,11 +26,6 @@ export function EmployeeFilters({
   const current = parseDirectorySearchParams(searchParams);
   const currentRef = useRef(current);
   const [search, setSearch] = useState(current.search ?? "");
-  currentRef.current = current;
-
-  useEffect(() => {
-    setSearch(current.search ?? "");
-  }, [current.search]);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
